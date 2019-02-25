@@ -19,8 +19,17 @@ class Gui:
 
       self.canvas.pack()
 
-   def start(self):
+   def start(self, world):
+
+      # self.loop(world)
+
       self.window.mainloop()
+
+   def loop(self, world):
+
+      # world.trigger_event()
+      self.window.after(1000, self.loop, world)
+      
 
    def get_width(self):
       return self.cells_x
@@ -37,7 +46,7 @@ class Gui:
       for i in range(0, self.width, self.cell_height):
          self.canvas.create_line([(0, i), (self.width, i)])
 
-   def draw(self, x, y, outline="black", fill="white", area=.5):
+   def draw_shape(self, x, y, outline="black", fill="white", area=.5, shape="circle"):
 
       spawn_x = x * self.cell_width + self.cell_width // 2
       spawn_y = self.height - y * self.cell_height - self.cell_height//2
@@ -47,5 +56,47 @@ class Gui:
                 spawn_x + (self.cell_width * area) // 2, 
                 spawn_y + (self.cell_width * area) // 2]
 
-      self.canvas.create_oval(coords, outline=outline, fill=fill)
- 
+      print(spawn_x, spawn_y)
+      print(coords)
+
+      if shape == "square":
+         new_shape = self.canvas.create_rectangle(coords, outline=outline, fill=fill)
+      elif shape == "circle":
+         new_shape = self.canvas.create_oval(coords, outline=outline, fill=fill)
+      elif shape == "star":
+
+         star_dip = 7
+
+         points = [spawn_x, spawn_y - self.cell_height * area // 2,
+                   spawn_x + self.cell_height * area // star_dip, spawn_y - self.cell_width * area // star_dip, 
+                   spawn_x + self.cell_width * area // 2, spawn_y ,
+                   spawn_x + self.cell_height * area // star_dip, spawn_y + self.cell_width * area // star_dip, 
+                   spawn_x, spawn_y + self.cell_height * area // 2,
+                   spawn_x - self.cell_height * area // star_dip, spawn_y + self.cell_width * area // star_dip, 
+                   spawn_x - self.cell_width * area // 2, spawn_y,
+                   spawn_x - self.cell_height * area // star_dip, spawn_y - self.cell_width * area // star_dip]
+
+         new_shape = self.canvas.create_polygon(points, outline=outline, fill=fill)
+      else:
+         new_shape = self.canvas.create_oval(coords, outline=outline, fill=fill)
+      
+      return new_shape
+
+   def move_shape(self, shape, direction):
+
+      x_vel = 0
+      y_vel = 0
+
+      if direction == "left":
+         x_vel = -1
+      elif direction == "right":
+         x_vel = 1
+      elif direction == "up":
+         y_vel = -1
+      elif direction == "down":
+         y_vel = 1
+      else:
+         raise ValueError("unknown direction")
+
+      self.canvas.move(shape, x_vel * self.cell_width, y_vel * self.cell_height)
+      

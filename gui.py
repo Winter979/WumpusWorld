@@ -19,24 +19,6 @@ class Gui:
 
       self.canvas.pack()
 
-   def start(self, world):
-
-      # self.loop(world)
-
-      self.window.mainloop()
-
-   def loop(self, world):
-
-      # world.trigger_event()
-      self.window.after(1000, self.loop, world)
-      
-
-   def get_width(self):
-      return self.cells_x
-
-   def get_height(self):
-      return self.cells_y
-
    def draw_grid(self):
       # Creates all vertical lines at intevals of cell width
       for i in range(0, self.width, self.cell_width):
@@ -45,6 +27,26 @@ class Gui:
       # Creates all horizontal lines at intevals of cell height
       for i in range(0, self.width, self.cell_height):
          self.canvas.create_line([(0, i), (self.width, i)])
+
+# ------------------------------------------------------------------------------
+
+   def start(self, callback):
+      self.loop(callback)
+      self.window.mainloop()
+
+   def loop(self, callback):
+      callback()
+      self.window.after(1000, self.loop, callback)
+      
+# ------------------------------------------------------------------------------
+
+   def get_width(self):
+      return self.cells_x
+
+   def get_height(self):
+      return self.cells_y
+
+# ------------------------------------------------------------------------------
 
    def draw_shape(self, x, y, outline="black", fill="white", area=.5, shape="circle"):
 
@@ -55,9 +57,6 @@ class Gui:
                 spawn_y - (self.cell_width * area) // 2,
                 spawn_x + (self.cell_width * area) // 2, 
                 spawn_y + (self.cell_width * area) // 2]
-
-      print(spawn_x, spawn_y)
-      print(coords)
 
       if shape == "square":
          new_shape = self.canvas.create_rectangle(coords, outline=outline, fill=fill)

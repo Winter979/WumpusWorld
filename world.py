@@ -1,5 +1,6 @@
 #! python3
 
+from cell import WorldCell
 from minion import Minion
 from gui import Gui 
 
@@ -9,7 +10,7 @@ import time
 class World:
 
    PIT_RATIO = .15
-
+ 
    KEY_EMPTY = 0
    KEY_MINION = 1
    KEY_GOLD = 2
@@ -26,15 +27,30 @@ class World:
       self.height = gui.get_height()
       self.max_y = self.height -1
  
-      # Create and initialize a 2d array (width*height)
-      self.grid = [[self.KEY_EMPTY]*self.width for i in range(self.height)]
+      self.setup_grid()
 
       random.seed()
 
       self.spawn_minion()
-      self.spawn_gold()
       self.spawn_pits()
+      self.spawn_gold()
       self.spawn_wumpus()
+
+   def setup_grid(self):
+      self.grid = [[WorldCell() for ii in range(self.width)] for jj in range(self.height)]
+
+      for x in range(self.width):
+         for y in range(self.height):
+            cell = self.grid[x][y]
+
+            if y < self.max_y:
+               cell.set_up(self.grid[x][y+1])
+            if y > 0:
+               cell.set_down(self.grid[x][y-1])
+            if x > 0:
+               cell.set_left(self.grid[x-1][y])
+            if x < self.max_x:
+               cell.set_right(self.grid[x+1][y])
 
 # ------------------------------------------------------------------------------
 
@@ -48,52 +64,17 @@ class World:
 
 # ------------------------------------------------------------------------------
 
+   def is_safe(self, x, y):
+      return not self.grid[x][y].is_wumpus() and not self.grid[x][y].is_pit()
+
    def is_breezy(self, x, y):
-      """Checks all adjecent squares to see if any of them contain a pit"""
-      breezy = False
-
-      if x < self.max_x:
-         if self.grid[x +1][y] == self.KEY_PIT:
-            breezy = True
-   
-      if y < self.max_y:
-         if self.grid[x][y +1] == self.KEY_PIT:
-            breezy = True
-
-      if x != 0:
-         if self.grid[x -1][y] == self.KEY_PIT:
-            breezy = True
-   
-      if y != 0:
-         if self.grid[x][y -1] == self.KEY_PIT:
-            breezy = True
-
-      return breezy
+      return self.grid[x][y].is_breezy()
 
    def is_smelly(self, x, y):
-      """Checks all adjecent squares to see if any of them contain the wumpus"""
-      smelly = False
-
-      if x < self.max_x:
-         if self.grid[x +1][y] == self.KEY_WUMPUS:
-            smelly = True
-   
-      if y < self.max_y:
-         if self.grid[x][y +1] == self.KEY_WUMPUS:
-            smelly = True
-
-      if x != 0:
-         if self.grid[x -1][y] == self.KEY_WUMPUS:
-            smelly = True
-   
-      if y != 0:
-         if self.grid[x][y -1] == self.KEY_WUMPUS:
-            smelly = True
-
-      return smelly
+      return self.grid[x][y].is_smelly()
 
    def is_shiny(self,x,y):
-      return self.grid[x][y] == self.KEY_GOLD
+      return self.grid[x][y].is_shiny()
 
 # ------------------------------------------------------------------------------
 
@@ -104,20 +85,40 @@ class World:
       return self.max_x, self.max_y
 
    def isEmpty(self, x, y):
-      return self.grid[x][y] == 0
+      return self.grid[x][y].is_empty()
 
    def findEmptyCell(self):
       found = False
       while not found:
-         x = random.randint(0, self.width-1)
-         y = random.randint(0, self.height-1)
+         x = random.randint(0, self.max_x)
+         y = random.randint(0, self.max_y)
          if self.isEmpty(x,y):
             found = True
 
       return x,y
 
-   def move_minion(self):
-      self.gui.move_shape(self.minion, "right")
+   def move_minion(self, x, y):
+
+      print("Current",self.minion_x, self.minion_y)
+      print("New",x, y)
+
+      direction = None
+
+      if self.minion_y - y == -1:
+         direction = "up"
+      elif self.minion_y - y == +1:
+         direction = "down"
+      elif self.minion_x - x == -1:
+         direction = "left"
+      elif self.minion_x - x == +1:
+         direction = "right"
+      
+      if direction != None:
+         self.gui.move_shape(self.minion_gui, direction)
+
+         self.minion_x = x
+         self.minion_y = y
+
 
 # ------------------------------------------------------------------------------
 
@@ -126,9 +127,8 @@ class World:
       self.minion_x = 0
       self.minion_y = 0
 
-      self.minion_gui = self.add_to_world(0,0, "minion")
-
       self.minion = Minion(self)
+      self.minion_gui = self.add_to_world(0,0, "minion")
 
    def spawn_gold(self):
       x,y = self.findEmptyCell()
@@ -148,6 +148,9 @@ class World:
          self.add_to_world(x,y,"pit")
 
    def add_to_world(self, x,y,item):
+
+      cell = self.grid[x][y]
+
       shape = "circle"
       fill = "white"
       area = .5
@@ -155,20 +158,19 @@ class World:
          fill = "blue"
          shape = "square"
          area = .5
-         key = self.KEY_MINION
+         cell.status = cell.MINION
       elif item == "gold":
          fill = "yellow"
          area = .7
          shape = "star"
-         key = self.KEY_GOLD
+         cell.status = cell.GOLD
       elif item == "wumpus":
          shape = "square"
          area = .6
-         key = self.KEY_WUMPUS
+         cell.status = cell.WUMPUS
       else : # elif item == "pit":
          fill = "grey"
          area = .8
-         key = self.KEY_PIT
-         
-      self.grid[x][y] = key
+         cell.status = cell.PIT
+
       return self.gui.draw_shape(x,y, shape=shape, fill=fill, area=area)

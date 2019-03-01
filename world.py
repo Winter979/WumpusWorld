@@ -32,9 +32,9 @@ class World:
       random.seed()
 
       self.spawn_minion()
-      self.spawn_pits()
-      self.spawn_gold()
-      self.spawn_wumpus()
+      # self.spawn_pits()
+      # self.spawn_gold()
+      # self.spawn_wumpus()
 
    def setup_grid(self):
       self.grid = [[WorldCell() for ii in range(self.width)] for jj in range(self.height)]
@@ -108,16 +108,20 @@ class World:
          direction = "up"
       elif self.minion_y - y == +1:
          direction = "down"
-      elif self.minion_x - x == -1:
-         direction = "left"
       elif self.minion_x - x == +1:
+         direction = "left"
+      elif self.minion_x - x == -1:
          direction = "right"
       
+      print("GO: ", direction)
+
       if direction != None:
          self.gui.move_shape(self.minion_gui, direction)
 
          self.minion_x = x
          self.minion_y = y
+      else:
+         print("no where to move")
 
 
 # ------------------------------------------------------------------------------

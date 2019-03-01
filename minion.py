@@ -8,6 +8,8 @@ class Minion:
 
       self.setup_grid()
 
+      # Heap to determine which cell to go to next
+      self.new_cells = []
 
       # The path that the minion has performed (reverse to head back
       # to the home)
@@ -16,7 +18,7 @@ class Minion:
       self.path.append([self.x, self.y])
 
    def setup_grid(self):
-      self.grid = [[Cell() for ii in range(self.max_x+1)] for jj in range(self.max_y+1)]
+      self.grid = [[Cell(ii, jj) for ii in range(self.max_x+1)] for jj in range(self.max_y+1)]
 
       for x in range(self.max_x+1):
          for y in range(self.max_y+1):
@@ -34,10 +36,13 @@ class Minion:
 # ------------------------------------------------------------------------------
 
    def next_action(self):
+
       x = self.x
       y = self.y
 
-      if self.grid[x][y].is_new():
+      print("Current coords:", x, y)
+
+      if not self.grid[x][y].been_to:
          if self.world.is_safe(x,y):
 
             self.update_dangers()
@@ -45,13 +50,14 @@ class Minion:
 
             self.grid[x][y].travelled_to()
 
+            print(new_x, new_y)
+
             self.world.move_minion(new_x, new_y)
 
             self.x = new_x
             self.y = new_y
-
-
-
+         else:
+            print("im dead")
 
    def update_dangers(self):
 
@@ -85,28 +91,23 @@ class Minion:
 
       adj = current.get_adjacent()
 
-      ii = 0
-      found = False
+      for cell in adj:
+         if cell != None and cell.is_new:
+            self.new_cells.append(cell)
+            cell.is_new = False
 
-      new_x = x
-      new_y = y
+      list.sort(self.new_cells)
 
-      dangers = []
+      destination = self.new_cells.pop(0)
 
-      danger_up = self.determine_danger(adj[0])
-      danger_down = self.determine_danger(adj[1])
-      danger_left = self.determine_danger(adj[2])
-      danger_right = self.determine_danger(adj[3])
+      return destination.x, destination.y
 
-      
-
-      return new_x, new_y
 
    def determine_danger(self, cell):
       if cell == None:
-         return -1
+         return None
 
-      if cell.is_new():
+      if cell.is_new:
          danger = cell.get_danger()
       else:
          danger = 0
@@ -126,9 +127,13 @@ class Cell:
    PIT = 3
    WUMPUS = 4
 
-   def __init__(self):
+   def __init__(self, x, y):
       
-      self.new_cell = True
+      self.x = x
+      self.y = y
+
+      self.is_new = True
+      self.been_to = False
       self.status = self.UNKNOWN
 
       self.breezes = 0
@@ -139,13 +144,16 @@ class Cell:
       self.cell_left = None
       self.cell_right = None
 
+   def __lt__(self, other):
+      return self.get_danger() < other.get_danger()
+
 # ------------------------------------------------------------------------------
 
-   def is_new(self):
-      return self.new_cell
+   # def is_new(self):
+   #    return self.new_cell
 
    def travelled_to(self):
-      self.new_cell = False
+      self.been_to = True
 
 # ------------------------------------------------------------------------------
 

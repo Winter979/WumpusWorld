@@ -32,8 +32,8 @@ class World:
       random.seed()
 
       self.spawn_minion()
-      # self.spawn_pits()
-      # self.spawn_gold()
+      self.spawn_pits()
+      self.spawn_gold()
       self.spawn_wumpus()
 
    def setup_grid(self):
@@ -55,6 +55,7 @@ class World:
 # ------------------------------------------------------------------------------
 
    def start(self):
+      self.gui.move_to_front(self.minion_gui)
       self.gui.start(self.trigger_event)
 
 
@@ -123,6 +124,19 @@ class World:
       self.minion_x = x
       self.minion_y = y
 
+   def shoot_wumpus(self, x, y):
+      cell = self.grid[x][y]
+
+      dead = False
+
+      if cell.is_wumpus():
+         dead = True
+         cell.status = cell.EMPTY
+         self.gui.remove_item(self.wumpus_gui)
+
+      
+      return dead
+
 # ------------------------------------------------------------------------------
 
    def spawn_minion(self):
@@ -139,7 +153,7 @@ class World:
 
    def spawn_wumpus(self):
       x,y = self.findEmptyCell()
-      self.add_to_world(x,y,"wumpus")
+      self.wumpus_gui = self.add_to_world(x,y,"wumpus")
 
    def spawn_pits(self):
       cell_count = self.width * self.height

@@ -48,6 +48,12 @@ class Gui:
 
 # ------------------------------------------------------------------------------
 
+   def move_to_front(self, item):
+      self.canvas.tag_raise(item)
+
+   def remove_item(self, item):
+      self.canvas.delete(item)
+
    def draw_shape(self, x, y, outline="black", fill="white", area=.5, shape="circle"):
 
       spawn_x = x * self.cell_width + self.cell_width // 2

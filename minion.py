@@ -8,21 +8,19 @@ class Minion:
 
       self.setup_grid()
 
+      self.grid[self.x][self.y].discovered = True
+
       # Heap to determine which cell to go to next
       self.new_cells = []
 
-      # The path that the minion has performed (reverse to head back
-      # to the home)
-      self.path = []
-
-      self.path.append([self.x, self.y])
-
    def setup_grid(self):
-      self.grid = [[Cell(ii, jj) for ii in range(self.max_x+1)] for jj in range(self.max_y+1)]
+      self.grid = [[Cell(ii, jj) for jj in range(self.max_y+1)] for ii in range(self.max_x+1)]
 
       for x in range(self.max_x+1):
          for y in range(self.max_y+1):
             cell = self.grid[x][y]
+
+            # print("*"*80)
 
             if y < self.max_y:
                cell.set_up(self.grid[x][y+1])
@@ -40,24 +38,22 @@ class Minion:
       x = self.x
       y = self.y
 
-      print("Current coords:", x, y)
-
       if not self.grid[x][y].been_to:
+         self.grid[x][y].been_to = True
+
          if self.world.is_safe(x,y):
 
             self.update_dangers()
             new_x, new_y = self.find_next()
 
-            self.grid[x][y].travelled_to()
-
-            print(new_x, new_y)
-
-            self.world.move_minion(new_x, new_y)
+            self.move_to_dest(new_x, new_y)
 
             self.x = new_x
             self.y = new_y
          else:
-            print("im dead")
+            print("im dead") 
+      else:
+         print("You have been here before")
 
    def update_dangers(self):
 
@@ -82,6 +78,7 @@ class Minion:
       if shiny:
          cell.set_status(cell.GOLD)
 
+# ------------------------------------------------------------------------------
             
    def find_next(self):
       x = self.x
@@ -91,28 +88,80 @@ class Minion:
 
       adj = current.get_adjacent()
 
+      print("Currently at:", x,y)
+
       for cell in adj:
-         if cell != None and cell.is_new:
-            self.new_cells.append(cell)
-            cell.is_new = False
+         if cell != None and not cell.discovered:
+            print("discoverd: ", cell.x, cell.y)
+            self.new_cells.insert(0,cell)
+            cell.discovered = True
 
       list.sort(self.new_cells)
 
-      destination = self.new_cells.pop(0)
+      dest_cell = self.new_cells.pop(0)
 
-      return destination.x, destination.y
+      print("Going to:", dest_cell.x, dest_cell.y)
 
+      print("="*80)
 
-   def determine_danger(self, cell):
-      if cell == None:
-         return None
+      return dest_cell.x, dest_cell.y
 
-      if cell.is_new:
-         danger = cell.get_danger()
+# ------------------------------------------------------------------------------
+
+   def move_to_dest(self, dest_x, dest_y):
+
+      curr_x = self.x
+      curr_y = self.y
+
+      # Check if you only need to move 1 square. No need for searching if so
+      if abs(dest_x - curr_x) + abs(dest_y - curr_y) == 1:
+         self.world.move_minion(dest_x, dest_y)
       else:
-         danger = 0
+         self.world.jump_minion(dest_x, dest_y)
 
-      return danger
+         # visited = [[False for ii in range(self.max_x+1)] for jj in range(self.max_y+1)]
+         # for x in range(self.max_x+1):
+         #    for y in range(self.max_y):
+         #       # You cant visit a cell you havent discovered yet
+         #       if self.grid[x][y].discovered:
+         #          visited[x][y] = True
+
+         # queue = [] 
+         # queue.append([curr_x, curr_y]) 
+         # visited[curr_x][curr_y] = True 
+         # while len(queue) > 0 :            
+
+         #    cell = queue.pop(0)
+
+         #    # Destination found 
+         #    if [cell[0]] == dest_x and cell[1] == dest_y  :
+         #       print("YAY YOU MADE IT")
+         #       return
+      
+         #    # moving up 
+         #    if cell[1] - 1 >= 0 and visited[cell[0]][cell[1]-1] == False: 
+         #       queue.append([cell[0], cell[1]-1])
+         #       self.world.move_minion(cell[0], cell[1]-1)
+         #       visited[cell[0]][cell[1]-1] = True 
+
+         #    # moving down 
+         #    if cell[1] + 1 < self.max_y+1 and visited[cell[0]][cell[1]+1] == False: 
+         #       queue.append([cell[0], cell[1]+1])
+         #       self.world.move_minion(cell[0], cell[1]+1)
+         #       visited[cell[0]][cell[1]+1] = True 
+
+         #    # moving left 
+         #    if cell[0] - 1 >= 0 and visited[cell[0]- 1][cell[1]] == False: 
+         #       queue.append([cell[0]- 1, cell[1]])
+         #       self.world.move_minion(cell[0]- 1, cell[1])
+         #       visited[cell[0]- 1][cell[1]] = True 
+            
+         #    # moving right 
+         #    if cell[0] + 1 < self.max_x+1 and visited[cell[0] + 1][cell[1]] == False: 
+         #       queue.append([cell[0] + 1, cell[1]])
+         #       self.world.move_minion(cell[0] + 1, cell[1])
+         #       visited[cell[0] + 1][cell[1]] = True  
+
 
 class Cell:
 
@@ -132,7 +181,7 @@ class Cell:
       self.x = x
       self.y = y
 
-      self.is_new = True
+      self.discovered = False
       self.been_to = False
       self.status = self.UNKNOWN
 
@@ -149,7 +198,7 @@ class Cell:
 
 # ------------------------------------------------------------------------------
 
-   # def is_new(self):
+   # def discovered(self):
    #    return self.new_cell
 
    def travelled_to(self):
@@ -175,7 +224,10 @@ class Cell:
 # ------------------------------------------------------------------------------
 
    def get_danger(self):
-      return self.breezes + self.smells
+      if self.status == Cell.SAFE:
+         return 0
+      else:
+         return self.breezes + self.smells
 
    def get_adjacent(self):
       return [self.cell_up, self.cell_down, self.cell_left, self.cell_right]

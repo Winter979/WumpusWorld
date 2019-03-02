@@ -5,7 +5,7 @@ from world import World
 
 def main():
     
-    gui = Gui(cells_x = 5, cells_y=5)
+    gui = Gui(cells_x = 4, cells_y=4)
     world = World(gui)
     world.start()
 

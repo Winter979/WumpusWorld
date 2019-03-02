@@ -99,3 +99,5 @@ class Gui:
 
       self.canvas.move(shape, x_vel * self.cell_width, y_vel * self.cell_height)
       
+   def jump_shape(self, shape, x_vel, y_vel):
+      self.canvas.move(shape, x_vel * self.cell_width, y_vel * self.cell_height)

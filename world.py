@@ -9,14 +9,9 @@ import time
 
 class World:
 
+   DEBUG = True
    PIT_RATIO = .15
  
-   KEY_EMPTY = 0
-   KEY_MINION = 1
-   KEY_GOLD = 2
-   KEY_WUMPUS = 3
-   KEY_PIT = 4
-
    def __init__(self, gui):
 
       self.gui = gui
@@ -184,6 +179,7 @@ class World:
       elif item == "wumpus":
          shape = "square"
          area = .6
+         fill="red"
          cell.status = cell.WUMPUS
       else : # elif item == "pit":
          fill = "grey"
